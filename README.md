@@ -1,4 +1,4 @@
-# Pixel Home 2.0 – home screen pixel-art untuk Android TV
+# Pixel Home 2.3 – home screen pixel-art untuk Android TV
 
 ## Build
 Upload semua isi folder ini ke GitHub, tunggu centang hijau di Actions,
@@ -13,6 +13,15 @@ download PixelHome-apk, lalu:
 - Tahan OK pada tile: ganti aplikasi, pakai foto sendiri, geser kiri/kanan, kembalikan semula.
 - Tahan OK pada SETELAN: suara 8-bit nyala/mati, demo langit 24 jam, atur ulang semua tile.
 - Tile FAVORIT: buka channel/playlist YouTube favorit di SmartTube.
+- Slideshow selebar layar di bagian bawah: 20 karya pixel art, acak, ganti tiap 10 detik
+  dengan transisi dissolve pixel + geser pelan + judul. Matikan/nyalakan: tahan OK pada SETELAN > "Slideshow",
+  atau  platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez slides false
+  (gambar dibuat oleh tools/build.py)
+- Karakter berambut afro (dari gambar pemilik) + 2 kucing (oranye & tuxedo) berjalan bolak-balik di bawah;
+  di ujung layar ia berhenti menghadap depan sambil tersenyum lalu berbalik (juga di screensaver).
+  Gambar diubah oleh tools/hero_from_image.py, kucing digambar oleh tools/cats.py.
+  Matikan/nyalakan: tahan OK pada SETELAN > "Karakter berjalan", atau
+      platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez walker false
 
 ## Perintah (dari folder Desktop)
 Nama di sapaan:

@@ -44,6 +44,8 @@ public class SkyView extends View {
     final Handler handler = new Handler(Looper.getMainLooper());
     final Random rnd = new Random(7);
     boolean running;
+    final Walker walker = new Walker(getResources());
+    boolean showWalker;
 
     int[] winX = new int[0], winY = new int[0];
     boolean[] lit = new boolean[0];
@@ -73,6 +75,7 @@ public class SkyView extends View {
             sky[i] = BitmapFactory.decodeResource(getResources(), SKY[i], o);
             land[i] = BitmapFactory.decodeResource(getResources(), LAND[i], o);
         }
+        showWalker = c.getSharedPreferences(KeyService.PREFS, Context.MODE_PRIVATE).getBoolean("walker", true);
         loadWindows();
         for (float[] s : stars) {
             s[0] = rnd.nextInt(W); s[1] = rnd.nextInt(52); s[2] = rnd.nextFloat() * 6.28f; s[3] = 1 + rnd.nextFloat() * 2;
@@ -147,6 +150,7 @@ public class SkyView extends View {
     final Runnable frame = new Runnable() {
         @Override public void run() {
             update(System.currentTimeMillis());
+            if (showWalker && getWidth() > 0) walker.update(getWidth(), walkerPx());
             invalidate();
             if (running) handler.postDelayed(this, 125);
         }
@@ -228,6 +232,18 @@ public class SkyView extends View {
             int col = Color.argb(wa, 255, 216, 74);
             for (int i = 0; i < winX.length; i++) if (lit[i]) dot(c, winX[i], winY[i], col);
         }
+
+        // the little walking character, near the bottom edge
+        if (showWalker) {
+            float wp = walkerPx();
+            walker.draw(c, wp, h - wp * 3);
+        }
+    }
+
+    /** One sprite pixel = half a background pixel, so the character fits under the tiles. */
+    float walkerPx() {
+        float sc = Math.max(getWidth() / (float) W, getHeight() / (float) H);
+        return Math.max(2, Math.round(sc * 0.5f));
     }
 
     void drawSun(Canvas c) {

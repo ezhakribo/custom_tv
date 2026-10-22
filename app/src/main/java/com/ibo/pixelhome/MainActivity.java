@@ -82,6 +82,7 @@ public class MainActivity extends PixelActivity {
     View firstTile;
     String pendingPhotoSlot;
     final List<View> tiles = new ArrayList<>();
+    SlideshowView slides;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -92,7 +93,7 @@ public class MainActivity extends PixelActivity {
 
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(56), dp(28), dp(56), dp(20));
+        page.setPadding(dp(56), dp(20), dp(56), dp(0));
         page.setClipChildren(false);
         page.setClipToPadding(false);
 
@@ -130,13 +131,22 @@ public class MainActivity extends PixelActivity {
         page.addView(top);
 
         // --- the two rows of tiles, in the order saved on the TV ---
-        page.addView(header("TONTON & DENGAR"), headerParams(18));
+        page.addView(header("TONTON & DENGAR"), headerParams(12));
         page.addView(buildRow("row0", ROW_APPS));
-        page.addView(header("INPUT & FAVORIT"), headerParams(22));
+        page.addView(header("INPUT & FAVORIT"), headerParams(14));
         page.addView(buildRow("row1", ROW_INPUTS));
 
         root.addView(page, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.TOP));
+
+        // full-width pixel-art slideshow along the bottom edge; the walker moves onto it
+        boolean walkerOn = prefs.getBoolean("walker", true);
+        if (prefs.getBoolean("slides", true)) {
+            slides = new SlideshowView(this);
+            slides.showWalker = walkerOn;
+            sky.showWalker = false;
+            root.addView(slides, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(120), Gravity.BOTTOM));
+        }
         setContentView(root);
 
         View restore = null;
@@ -153,7 +163,7 @@ public class MainActivity extends PixelActivity {
         List<Slot> ordered = order(key, slots);
         for (int i = 0; i < ordered.size(); i++) {
             Slot s = ordered.get(i);
-            LinearLayout t = tile(label(s), art(s), 176, 99, 11, () -> open(s), () -> slotMenu(key, slots, s));
+            LinearLayout t = tile(label(s), art(s), 160, 90, 10, () -> open(s), () -> slotMenu(key, slots, s));
             View frame = t.getChildAt(0);
             frame.setTag(s.id);
             tiles.add(frame);
@@ -235,13 +245,17 @@ public class MainActivity extends PixelActivity {
 
     /** Hold OK on SETELAN: the Pixel Home options that aren't tied to one tile. */
     void pixelMenu() {
+        boolean walker = prefs.getBoolean("walker", true);
         String[] items = {"Suara 8-bit: " + (soundsOn() ? "NYALA" : "MATI"), "Demo langit 24 jam (48 detik)",
-                "Atur ulang semua tile"};
+                "Atur ulang semua tile", "Karakter berjalan: " + (walker ? "NYALA" : "MATI"),
+                "Slideshow: " + (prefs.getBoolean("slides", true) ? "NYALA" : "MATI")};
         new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle("PIXEL HOME")
                 .setItems(items, (d, which) -> {
                     if (which == 0) prefs.edit().putBoolean("sounds", !soundsOn()).apply();
                     else if (which == 1) skyDemo();
+                    else if (which == 3) { prefs.edit().putBoolean("walker", !walker).apply(); recreate(); }
+                    else if (which == 4) { prefs.edit().putBoolean("slides", !prefs.getBoolean("slides", true)).apply(); recreate(); }
                     else {
                         SharedPreferences.Editor ed = prefs.edit();
                         for (String k : prefs.getAll().keySet())
@@ -442,6 +456,7 @@ public class MainActivity extends PixelActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (slides != null) slides.start();
         handler.removeCallbacks(tick);
         handler.post(tick);
     }
@@ -449,6 +464,7 @@ public class MainActivity extends PixelActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        if (slides != null) slides.stop();
         handler.removeCallbacks(tick);
     }
 
@@ -498,6 +514,8 @@ public class MainActivity extends PixelActivity {
         if (i.hasExtra("favUrl")) p.edit().putString("fav_url", i.getStringExtra("favUrl")).apply();
         if (i.hasExtra("favName")) { p.edit().putString("fav_name", i.getStringExtra("favName")).apply(); recreate(); }
         if (i.getBooleanExtra("skyDemo", false)) skyDemo();
+        if (i.hasExtra("slides")) { p.edit().putBoolean("slides", i.getBooleanExtra("slides", true)).apply(); recreate(); }
+        if (i.hasExtra("walker")) { p.edit().putBoolean("walker", i.getBooleanExtra("walker", true)).apply(); recreate(); }
         if (i.hasExtra("name")) { handler.removeCallbacks(tick); handler.post(tick); }
     }
 
