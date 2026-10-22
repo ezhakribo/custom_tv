@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="key_service_desc">Lets one remote button you choose open Pixel Home. It only reacts to that button and reads nothing on screen.</string>
+</resources>

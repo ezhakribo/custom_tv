@@ -30,3 +30,15 @@ Switch back (use the line you saved, usually this one):
 (Switch the Home button back first.)
 
 Font: Press Start 2P (SIL Open Font License, see FONT-LICENSE-OFL.txt).
+
+## Remote buttons (v1.2)
+Turn on the helper once:
+    platform-tools\adb shell settings put secure enabled_accessibility_services com.ibo.pixelhome/com.ibo.pixelhome.KeyService
+    platform-tools\adb shell settings put secure accessibility_enabled 1
+Teach a button (run, then press the button on the remote):
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --es learn home
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --es learn netflix
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --es learn disney
+Forget all taught buttons:
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez forgetKeys true
+The Google voice button, arrows, OK, Back, Home, volume and power can never be taken over.

@@ -93,6 +93,40 @@ public class MainActivity extends PixelActivity {
         setContentView(root);
         firstTile.requestFocus();
         logInputs();
+        handleCommand(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleCommand(intent);
+    }
+
+    /**
+     * adb shell am start -n com.ibo.pixelhome/.MainActivity --es learn home|netflix|disney
+     * adb shell am start -n com.ibo.pixelhome/.MainActivity --ez forgetKeys true
+     */
+    void handleCommand(Intent i) {
+        if (i == null) return;
+        android.content.SharedPreferences p = getSharedPreferences(KeyService.PREFS, MODE_PRIVATE);
+        String learn = i.getStringExtra("learn");
+        if (learn == null && i.getBooleanExtra("learnKey", false)) learn = "home";
+        if (learn != null) {
+            String on = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (on == null || !on.contains(getPackageName())) {
+                toast("Turn on the 'Pixel Home remote button' helper first");
+                return;
+            }
+            p.edit().putString(KeyService.LEARN, learn.toLowerCase(Locale.ROOT)).apply();
+            toast("Now press the remote button that should open " + learn);
+        } else if (i.getBooleanExtra("forgetKeys", false) || i.getBooleanExtra("forgetKey", false)) {
+            android.content.SharedPreferences.Editor ed = p.edit();
+            for (String k : p.getAll().keySet()) {
+                if (k.startsWith(KeyService.MAP) || k.equals(KeyService.LEARN)) ed.remove(k);
+            }
+            ed.apply();
+            toast("All learned buttons forgotten - the remote works like before");
+        }
     }
 
     View addTile(LinearLayout row, String label, int art, Runnable click, Runnable longClick, int leftGap) {
