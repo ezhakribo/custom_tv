@@ -7,6 +7,9 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioAttributes;
+import android.media.SoundPool;
+import android.os.SystemClock;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -24,6 +27,49 @@ public abstract class PixelActivity extends Activity {
     static final int LILAC = Color.parseColor("#C9B8FF");
 
     Typeface pixel;
+    SkyView sky;
+
+    // ---------- 8-bit sounds ----------
+    static SoundPool sounds;
+    static int blipId, selectId;
+    long quietUntil;   // no blip for the automatic first focus
+
+    void initSounds() {
+        if (sounds != null) return;
+        sounds = new SoundPool.Builder().setMaxStreams(2).setAudioAttributes(new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()).build();
+        blipId = sounds.load(this, R.raw.blip, 1);
+        selectId = sounds.load(this, R.raw.select, 1);
+    }
+
+    boolean soundsOn() {
+        return getSharedPreferences(KeyService.PREFS, MODE_PRIVATE).getBoolean("sounds", true);
+    }
+
+    void play(int id) {
+        if (sounds != null && soundsOn() && SystemClock.uptimeMillis() > quietUntil) sounds.play(id, 0.6f, 0.6f, 0, 0, 1f);
+    }
+
+    @Override
+    protected void onCreate(android.os.Bundle state) {
+        super.onCreate(state);
+        initSounds();
+        quietUntil = SystemClock.uptimeMillis() + 600;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        quietUntil = SystemClock.uptimeMillis() + 400;
+        if (sky != null) sky.start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (sky != null) sky.stop();
+    }
 
     Typeface font() {
         if (pixel == null) pixel = getResources().getFont(R.font.press_start_2p);
@@ -63,11 +109,11 @@ public abstract class PixelActivity extends Activity {
         return t;
     }
 
-    /** Full-screen pixel background with a container on top. */
+    /** Full-screen living pixel sky with a container on top. */
     FrameLayout backdrop() {
         FrameLayout root = new FrameLayout(this);
-        root.addView(image(crisp(R.drawable.bg), ImageView.ScaleType.CENTER_CROP),
-                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        sky = new SkyView(this);
+        root.addView(sky, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         return root;
     }
 
@@ -99,14 +145,14 @@ public abstract class PixelActivity extends Activity {
         lp.topMargin = dp(10);
         box.addView(name, lp);
 
-        frame.setOnClickListener(v -> onClick.run());
+        frame.setOnClickListener(v -> { play(selectId); onClick.run(); });
         if (onLongClick != null) frame.setOnLongClickListener(v -> { onLongClick.run(); return true; });
         frame.setOnFocusChangeListener((v, has) -> {
             frame.setBackgroundColor(has ? YELLOW : INK);
             name.setText(has ? "> " + label : label);
             name.setTextColor(has ? YELLOW : Color.WHITE);
             box.animate().scaleX(has ? 1.08f : 1f).scaleY(has ? 1.08f : 1f).setDuration(110).start();
-            if (has) onTileFocused(v);
+            if (has) { play(blipId); onTileFocused(v); }
         });
         return box;
     }

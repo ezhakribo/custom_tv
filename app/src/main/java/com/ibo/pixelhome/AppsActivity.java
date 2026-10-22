@@ -33,7 +33,7 @@ public class AppsActivity extends PixelActivity {
         page.setPadding(dp(56), dp(32), dp(56), dp(48));
         page.setClipChildren(false);
         page.setClipToPadding(false);
-        page.addView(text("ALL APPS", 20, YELLOW));
+        page.addView(text("SEMUA APLIKASI", 20, YELLOW));
 
         PackageManager pm = getPackageManager();
         Intent query = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
@@ -78,7 +78,7 @@ public class AppsActivity extends PixelActivity {
         try {
             startActivity(i);
         } catch (RuntimeException e) {
-            toast("Can't open that app");
+            toast("Tidak bisa membuka aplikasi itu");
         }
     }
 }

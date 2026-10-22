@@ -1,50 +1,50 @@
-# Pixel Home – a pixel-art home screen for Android TV
+# Pixel Home 2.0 – home screen pixel-art untuk Android TV
 
-## Build (once, on your PC)
-1. Install Android Studio (free): https://developer.android.com/studio
-2. File > Open > choose this PixelHome folder. Wait for "Gradle sync" to finish.
-3. Build > Build App Bundle(s) / APK(s) > Build APK(s).
-4. Click "locate". The file is app\build\outputs\apk\debug\app-debug.apk
+## Build
+Upload semua isi folder ini ke GitHub, tunggu centang hijau di Actions,
+download PixelHome-apk, lalu:
+    platform-tools\adb install -r "C:\Users\IBO\Desktop\PixelHome\app-debug.apk"
 
-## Install on the TV (PowerShell, in your Desktop folder)
-    platform-tools\adb install -r "PATH\TO\app-debug.apk"
-It appears in the TV's app list as "Pixel Home".
+## Fitur
+- Langit hidup: 8 sesi (tiap 3 jam), berpindah sangat halus, matahari & bulan bergerak,
+  awan berjalan, bintang berkelip, lampu kota menyala-mati, kadang bintang jatuh.
+- Sapaan + tanggal, jam, cuaca Bandung (Open-Meteo), jadwal sholat berikutnya (Kemenag, dihitung di TV).
+- Screensaver pixel.
+- Tahan OK pada tile: ganti aplikasi, pakai foto sendiri, geser kiri/kanan, kembalikan semula.
+- Tahan OK pada SETELAN: suara 8-bit nyala/mati, demo langit 24 jam, atur ulang semua tile.
+- Tile FAVORIT: buka channel/playlist YouTube favorit di SmartTube.
 
-## Make the Home button open it (optional, reversible)
-Save what the TV uses now (keep this output!):
-    platform-tools\adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME
-Switch to Pixel Home:
-    platform-tools\adb shell cmd package set-home-activity com.ibo.pixelhome/.MainActivity
-Switch back (use the line you saved, usually this one):
-    platform-tools\adb shell cmd package set-home-activity com.google.android.tvlauncher/.MainActivity
+## Perintah (dari folder Desktop)
+Nama di sapaan:
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --es name IBO
+Tile favorit:
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --es favUrl "https://www.youtube.com/@NAMACHANNEL" --es favName LOFI
+Suara 8-bit mati / nyala:
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez sounds false
+Demo langit 24 jam dalam 48 detik:
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez skyDemo true
 
-## Customize
-- Pictures: replace PNGs in app/src/main/res/drawable-nodpi/ (keep the names, 16:9 shape).
-  Small pixel art (e.g. 64x36) stays sharp; art.py regenerates the originals.
-- Which app a tile opens: edit the "EDIT HERE" block at the top of MainActivity.java.
-- Inputs: DIGITAL TV opens the AV input, GAMES opens HDMI 3. Hold OK on an input tile to see what the TV reports.
-  Full details: platform-tools\adb logcat -s PixelHome
+## Screensaver
+Simpan nilai lama dulu:
+    platform-tools\adb shell settings get secure screensaver_components
+Pasang:
+    platform-tools\adb shell settings put secure screensaver_components com.ibo.pixelhome/com.ibo.pixelhome.PixelDream
+    platform-tools\adb shell settings put secure screensaver_enabled 1
+Kembalikan: put lagi nilai lama yang disimpan.
 
-## Remove
-    platform-tools\adb uninstall com.ibo.pixelhome
-(Switch the Home button back first.)
+## Foto sendiri
+Taruh foto (jpg/png) di folder "PixelHome" di flashdisk, colok ke TV,
+tahan OK pada tile > "Pakai foto sendiri" > izinkan akses foto > pilih.
 
-Font: Press Start 2P (SIL Open Font License, see FONT-LICENSE-OFL.txt).
-
-## Remote buttons (v1.2)
-Turn on the helper once:
-    platform-tools\adb shell settings put secure enabled_accessibility_services com.ibo.pixelhome/com.ibo.pixelhome.KeyService
-    platform-tools\adb shell settings put secure accessibility_enabled 1
-Teach a button (run, then press the button on the remote):
+## Tombol remote (helper)
     platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --es learn home
-    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --es learn netflix
     platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --es learn disney
-Forget all taught buttons:
     platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez forgetKeys true
-The Google voice button, arrows, OK, Back, Home, volume and power can never be taken over.
+Kalau helper berhenti setelah update:
+    platform-tools\adb shell settings put secure enabled_accessibility_services null
+    platform-tools\adb shell settings put secure enabled_accessibility_services com.ibo.pixelhome/com.ibo.pixelhome.KeyService
 
-## Pixel volume bar (v1.3)
-Needs the button helper turned on. Then:
-    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez pixelVolume true
-Back to the TV's normal volume bar:
-    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez pixelVolume false
+## Lokasi lain
+Ubah LAT/LON di HomeInfo.java (cuaca & jadwal sholat), lalu build ulang.
+
+Font: Press Start 2P (SIL Open Font License, lihat FONT-LICENSE-OFL.txt).
