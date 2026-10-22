@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
@@ -28,6 +29,9 @@ public class KeyService extends AccessibilityService {
     static final String PREFS = "pixelhome";
     static final String LEARN = "learn_target";   // what the next pressed button should open
     static final String MAP = "key_";             // key_<keycode> -> target
+    static final String PIXEL_VOLUME = "pixel_volume";
+
+    VolumeOverlay volume;
 
     static final Map<String, String> ALIASES = new HashMap<>();
     static {
@@ -53,8 +57,9 @@ public class KeyService extends AccessibilityService {
         if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
             Log.i(TAG, "key " + code + " " + KeyEvent.keyCodeToString(code));
         }
-        if (NEVER.contains(code)) return false;
         SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+        if (p.getBoolean(PIXEL_VOLUME, false) && handleVolume(e)) return true;
+        if (NEVER.contains(code)) return false;
 
         String learning = p.getString(LEARN, null);
         if (learning != null) {
@@ -72,6 +77,27 @@ public class KeyService extends AccessibilityService {
             return true;   // swallow it so the old handler doesn't also react
         }
         return false;
+    }
+
+    /** Change the volume ourselves (without the TV's own bar) and show the pixel bar. */
+    boolean handleVolume(KeyEvent e) {
+        int code = e.getKeyCode();
+        int dir;
+        if (code == KeyEvent.KEYCODE_VOLUME_UP) dir = AudioManager.ADJUST_RAISE;
+        else if (code == KeyEvent.KEYCODE_VOLUME_DOWN) dir = AudioManager.ADJUST_LOWER;
+        else if (code == KeyEvent.KEYCODE_VOLUME_MUTE) dir = AudioManager.ADJUST_TOGGLE_MUTE;
+        else return false;
+        if (e.getAction() == KeyEvent.ACTION_DOWN
+                && (dir != AudioManager.ADJUST_TOGGLE_MUTE || e.getRepeatCount() == 0)) {
+            AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+            if (am == null) return false;
+            am.adjustStreamVolume(AudioManager.STREAM_MUSIC, dir, 0);   // 0 = don't show the system bar
+            if (volume == null) volume = new VolumeOverlay(this);
+            volume.show(am.getStreamVolume(AudioManager.STREAM_MUSIC),
+                    am.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+                    am.isStreamMute(AudioManager.STREAM_MUSIC));
+        }
+        return true;
     }
 
     void open(String target) {

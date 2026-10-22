@@ -42,3 +42,9 @@ Teach a button (run, then press the button on the remote):
 Forget all taught buttons:
     platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez forgetKeys true
 The Google voice button, arrows, OK, Back, Home, volume and power can never be taken over.
+
+## Pixel volume bar (v1.3)
+Needs the button helper turned on. Then:
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez pixelVolume true
+Back to the TV's normal volume bar:
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez pixelVolume false

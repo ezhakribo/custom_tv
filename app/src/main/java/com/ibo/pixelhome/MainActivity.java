@@ -105,6 +105,7 @@ public class MainActivity extends PixelActivity {
     /**
      * adb shell am start -n com.ibo.pixelhome/.MainActivity --es learn home|netflix|disney
      * adb shell am start -n com.ibo.pixelhome/.MainActivity --ez forgetKeys true
+     * adb shell am start -n com.ibo.pixelhome/.MainActivity --ez pixelVolume true|false
      */
     void handleCommand(Intent i) {
         if (i == null) return;
@@ -119,6 +120,10 @@ public class MainActivity extends PixelActivity {
             }
             p.edit().putString(KeyService.LEARN, learn.toLowerCase(Locale.ROOT)).apply();
             toast("Now press the remote button that should open " + learn);
+        } else if (i.hasExtra("pixelVolume")) {
+            boolean on = i.getBooleanExtra("pixelVolume", false);
+            p.edit().putBoolean(KeyService.PIXEL_VOLUME, on).apply();
+            toast(on ? "Pixel volume bar ON - try the volume buttons" : "Pixel volume bar OFF - normal volume bar is back");
         } else if (i.getBooleanExtra("forgetKeys", false) || i.getBooleanExtra("forgetKey", false)) {
             android.content.SharedPreferences.Editor ed = p.edit();
             for (String k : p.getAll().keySet()) {
