@@ -1,4 +1,4 @@
-# Pixel Home 2.3 – home screen pixel-art untuk Android TV
+# Pixel Home 2.4 – home screen pixel-art untuk Android TV
 
 ## Build
 Upload semua isi folder ini ke GitHub, tunggu centang hijau di Actions,
@@ -22,6 +22,13 @@ download PixelHome-apk, lalu:
   Gambar diubah oleh tools/hero_from_image.py, kucing digambar oleh tools/cats.py.
   Matikan/nyalakan: tahan OK pada SETELAN > "Karakter berjalan", atau
       platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez walker false
+
+## Tampilan (2.4)
+- Warna aksen ikut waktu: kuning siang, jingga sore, merah muda petang, biru muda malam.
+- Bingkai fokus "bernapas" pelan; nama tile hanya muncul pada tile yang dipilih.
+- Efek kedalaman: langit dan gunung bergeser sedikit saat fokus pindah kiri/kanan.
+- Animasi pembuka "PIXEL HOME" saat TV baru menyala.
+- Semua gambar memakai satu palet 64 warna (tools/unify_palette.py, contoh di tools/palette.png).
 
 ## Perintah (dari folder Desktop)
 Nama di sapaan:

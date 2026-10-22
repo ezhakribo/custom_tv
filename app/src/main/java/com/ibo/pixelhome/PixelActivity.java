@@ -1,5 +1,9 @@
 package com.ibo.pixelhome;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -28,6 +32,44 @@ public abstract class PixelActivity extends Activity {
 
     Typeface pixel;
     SkyView sky;
+    /** Show a tile's name only while it is focused (cleaner look). */
+    boolean labelsOnFocusOnly;
+    ValueAnimator breath;
+    View breathFrame;
+
+    static int lighten(int c, float t) {
+        return Color.rgb(Math.round(Color.red(c) + (255 - Color.red(c)) * t),
+                Math.round(Color.green(c) + (255 - Color.green(c)) * t),
+                Math.round(Color.blue(c) + (255 - Color.blue(c)) * t));
+    }
+
+    /** The focused frame softly "breathes" between the time-of-day accent and a lighter tint. */
+    void breathe(View frame) {
+        if (breath != null) breath.cancel();
+        breathFrame = frame;
+        int acc = SkyView.accentNow();
+        breath = ValueAnimator.ofObject(new ArgbEvaluator(), acc, lighten(acc, 0.55f));
+        breath.setDuration(900);
+        breath.setRepeatMode(ValueAnimator.REVERSE);
+        breath.setRepeatCount(ValueAnimator.INFINITE);
+        breath.addUpdateListener(a -> frame.setBackgroundColor((Integer) a.getAnimatedValue()));
+        breath.addListener(new AnimatorListenerAdapter() {
+            @Override public void onAnimationRepeat(Animator a) {
+                int now = SkyView.accentNow();                    // keep following the clock
+                ((ValueAnimator) a).setObjectValues(now, lighten(now, 0.55f));
+            }
+        });
+        breath.start();
+    }
+
+    /** Tell the sky where the focus is, for the depth effect. */
+    void parallaxTo(View v) {
+        if (sky == null) return;
+        int[] loc = new int[2];
+        v.getLocationOnScreen(loc);
+        float screenW = getWindow().getDecorView().getWidth();
+        if (screenW > 0) sky.setParallaxTarget((loc[0] + v.getWidth() / 2f) / screenW * 2f - 1f);
+    }
 
     // ---------- 8-bit sounds ----------
     static SoundPool sounds;
@@ -63,11 +105,13 @@ public abstract class PixelActivity extends Activity {
         super.onResume();
         quietUntil = SystemClock.uptimeMillis() + 400;
         if (sky != null) sky.start();
+        if (breath != null) breath.resume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        if (breath != null) breath.pause();
         if (sky != null) sky.stop();
     }
 
@@ -147,12 +191,19 @@ public abstract class PixelActivity extends Activity {
 
         frame.setOnClickListener(v -> { play(selectId); onClick.run(); });
         if (onLongClick != null) frame.setOnLongClickListener(v -> { onLongClick.run(); return true; });
+        if (labelsOnFocusOnly) name.setVisibility(View.INVISIBLE);
         frame.setOnFocusChangeListener((v, has) -> {
-            frame.setBackgroundColor(has ? YELLOW : INK);
+            int acc = SkyView.accentNow();
+            if (has) breathe(frame);
+            else {
+                if (breathFrame == frame && breath != null) { breath.cancel(); breath = null; }
+                frame.setBackgroundColor(INK);
+            }
             name.setText(has ? "> " + label : label);
-            name.setTextColor(has ? YELLOW : Color.WHITE);
-            box.animate().scaleX(has ? 1.08f : 1f).scaleY(has ? 1.08f : 1f).setDuration(110).start();
-            if (has) { play(blipId); onTileFocused(v); }
+            name.setTextColor(has ? acc : Color.WHITE);
+            if (labelsOnFocusOnly) name.setVisibility(has ? View.VISIBLE : View.INVISIBLE);
+            box.animate().scaleX(has ? 1.08f : 1f).scaleY(has ? 1.08f : 1f).setDuration(140).start();
+            if (has) { play(blipId); parallaxTo(v); onTileFocused(v); }
         });
         return box;
     }

@@ -83,11 +83,13 @@ public class MainActivity extends PixelActivity {
     String pendingPhotoSlot;
     final List<View> tiles = new ArrayList<>();
     SlideshowView slides;
+    static boolean splashShown;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         prefs = getSharedPreferences(KeyService.PREFS, MODE_PRIVATE);
+        labelsOnFocusOnly = true;
         FrameLayout root = backdrop();
         root.setClipChildren(false);
 
@@ -146,6 +148,11 @@ public class MainActivity extends PixelActivity {
             slides.showWalker = walkerOn;
             sky.showWalker = false;
             root.addView(slides, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(120), Gravity.BOTTOM));
+        }
+        if (!splashShown) {                       // opening animation, once per TV start
+            splashShown = true;
+            root.addView(new SplashView(this), new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
         setContentView(root);
 
@@ -442,6 +449,7 @@ public class MainActivity extends PixelActivity {
         @Override public void run() {
             clock.setText(HomeInfo.clock());
             greeting.setText(HomeInfo.greeting(MainActivity.this));
+            greeting.setTextColor(SkyView.accentNow());
             date.setText(HomeInfo.date());
             infoText.setText(weatherText + HomeInfo.nextPrayer());
             HomeInfo.weather(MainActivity.this, (t, code, isDay) -> {

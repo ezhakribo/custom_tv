@@ -35,6 +35,23 @@ public class SkyView extends View {
     static final float[] DAY    = {0.0f, 0.05f, 0.8f, 1.0f, 1.0f, 0.8f, 0.2f, 0.0f};
     static final float[] LIGHTS = {0.5f, 0.35f, 0.08f, 0.02f, 0.02f, 0.12f, 0.9f, 0.8f};
 
+    /** UI accent colour per session: follows the sky (cyan night, peach dawn, yellow day, pink dusk). */
+    static final int[] ACCENT = {0xFF5AD1E6, 0xFFC9B8FF, 0xFFFFB070, 0xFFFFD84A, 0xFFFFD84A, 0xFFFFA040, 0xFFFF7AB0, 0xFF7AD8FF};
+
+    static int accentNow() {
+        float[] m = mix(minutesNow());
+        return blendColor(ACCENT[(int) m[0]], ACCENT[(int) m[1]], m[2]);
+    }
+
+    /** Depth effect: -1 (focus at the left) .. 1 (right). Land moves more than sky. */
+    float parallax, parallaxTarget;
+    long lastTick;
+
+    void setParallaxTarget(float t) {
+        parallaxTarget = Math.max(-1, Math.min(1, t));
+        if (running) { handler.removeCallbacks(frame); handler.post(frame); }
+    }
+
     /** Speeds a whole day through in 48 seconds, to preview the transitions. */
     static boolean demo;
     static long demoStart;
@@ -149,10 +166,17 @@ public class SkyView extends View {
     // ---------- animation loop (8 frames a second, only while visible) ----------
     final Runnable frame = new Runnable() {
         @Override public void run() {
-            update(System.currentTimeMillis());
-            if (showWalker && getWidth() > 0) walker.update(getWidth(), walkerPx());
+            long now = System.currentTimeMillis();
+            if (now - lastTick >= 120) {                      // scene + walker: 8 steps a second
+                lastTick = now;
+                update(now);
+                if (showWalker && getWidth() > 0) walker.update(getWidth(), walkerPx());
+            }
+            float d = parallaxTarget - parallax;              // depth glide: smooth, 30 fps while moving
+            boolean gliding = Math.abs(d) > 0.003f;
+            parallax = gliding ? parallax + d * 0.18f : parallaxTarget;
             invalidate();
-            if (running) handler.postDelayed(this, 125);
+            if (running) handler.postDelayed(this, gliding ? 33 : 125);
         }
     };
 
@@ -160,6 +184,7 @@ public class SkyView extends View {
         if (running) return;
         running = true;
         last = 0;
+        lastTick = 0;
         handler.post(frame);
     }
 
@@ -178,10 +203,13 @@ public class SkyView extends View {
     @Override
     protected void onDraw(Canvas c) {
         int w = getWidth(), h = getHeight();
-        scale = Math.max(w / (float) W, h / (float) H);
-        ox = (w - W * scale) / 2f;
+        scale = Math.max(w / (float) W, h / (float) H) * 1.06f;   // a little overscan so the depth shift never shows an edge
+        float baseX = (w - W * scale) / 2f;
+        float skyX = baseX + Math.round(parallax * -1.5f * scale), landX = baseX + Math.round(parallax * -4f * scale);
+        ox = skyX;
         oy = (h - H * scale) / 2f;
         RectF dst = new RectF(ox, oy, ox + W * scale, oy + H * scale);
+        RectF landDst = new RectF(landX, oy, landX + W * scale, oy + H * scale);
         Rect src = new Rect(0, 0, W, H);
 
         // sky: blend the two neighbouring sessions
@@ -219,11 +247,12 @@ public class SkyView extends View {
             }
         }
 
-        // mountains + city, blended the same way
+        // mountains + city, blended the same way (they sit closer, so they shift more)
+        ox = landX;
         bmp.setAlpha(255);
-        c.drawBitmap(land[a], src, dst, bmp);
+        c.drawBitmap(land[a], src, landDst, bmp);
         bmp.setAlpha(Math.round(blend * 255));
-        c.drawBitmap(land[b], src, dst, bmp);
+        c.drawBitmap(land[b], src, landDst, bmp);
         bmp.setAlpha(255);
 
         // lit windows

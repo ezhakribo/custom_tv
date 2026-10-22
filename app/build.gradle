@@ -6,8 +6,8 @@ android {
         applicationId 'com.ibo.pixelhome'
         minSdk 26
         targetSdk 34
-        versionCode 8
-        versionName '2.3'
+        versionCode 9
+        versionName '2.4'
     }
     // Same key for every build, so updates install over the old version.
     signingConfigs {
