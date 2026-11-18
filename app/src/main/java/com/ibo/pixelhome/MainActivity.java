@@ -268,13 +268,14 @@ public class MainActivity extends PixelActivity {
         boolean walker = prefs.getBoolean("walker", true);
         String[] items = {"Suara 8-bit: " + (soundsOn() ? "NYALA" : "MATI"), "Demo langit 24 jam (48 detik)",
                 "Atur ulang semua tile", "Karakter berjalan: " + (walker ? "NYALA" : "MATI"),
-                "Slideshow: " + (prefs.getBoolean("slides", true) ? "NYALA" : "MATI")};
+                "Slideshow: " + (prefs.getBoolean("slides", true) ? "NYALA" : "MATI"), "Rayakan sekarang!"};
         new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle("PIXEL HOME")
                 .setItems(items, (d, which) -> {
                     if (which == 0) prefs.edit().putBoolean("sounds", !soundsOn()).apply();
                     else if (which == 1) skyDemo();
                     else if (which == 3) { prefs.edit().putBoolean("walker", !walker).apply(); recreate(); }
+                    else if (which == 5) Walker.requestCelebrate = true;
                     else if (which == 4) { prefs.edit().putBoolean("slides", !prefs.getBoolean("slides", true)).apply(); recreate(); }
                     else {
                         SharedPreferences.Editor ed = prefs.edit();
@@ -538,6 +539,7 @@ public class MainActivity extends PixelActivity {
         if (i.hasExtra("favUrl")) p.edit().putString("fav_url", i.getStringExtra("favUrl")).apply();
         if (i.hasExtra("favName")) { p.edit().putString("fav_name", i.getStringExtra("favName")).apply(); recreate(); }
         if (i.getBooleanExtra("skyDemo", false)) skyDemo();
+        if (i.getBooleanExtra("celebrate", false)) Walker.requestCelebrate = true;
         if (i.hasExtra("slides")) { p.edit().putBoolean("slides", i.getBooleanExtra("slides", true)).apply(); recreate(); }
         if (i.hasExtra("walker")) { p.edit().putBoolean("walker", i.getBooleanExtra("walker", true)).apply(); recreate(); }
         if (i.hasExtra("name")) { handler.removeCallbacks(tick); handler.post(tick); }

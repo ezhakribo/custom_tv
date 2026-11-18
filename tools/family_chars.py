@@ -98,7 +98,7 @@ def body(d,im,s,g,view,f,OY):
         d.line((cx-2,t[1],cx+2,t[1]),fill=s["stitch"])
         d.line((t[0]+2,t[1]+4,t[0]+4,t[1]+4),fill=s["stitch"])   # pocket
     if s.get("shorts"): d.line((t[0],t[3]-1,t[2],t[3]-1),fill=s["top2"])
-    if not side:
+    if view=="front":
         for ax in (t[0]-2,t[2]):
             d.rectangle((ax,t[1]+1,ax+2,t[1]+L),fill=s["sleeve"],outline=s["sleeve2"])
             d.rectangle((ax,t[1]+L-1,ax+2,t[1]+L+1),fill=SK)
@@ -172,15 +172,29 @@ def head(d,im,s,g,view,bob):
             if s.get("glasses"): d.rectangle((ex-1,ey-2,ex+3,ey+2),outline=K)
         if s.get("glasses"): d.line((cx-1,ey,cx+1,ey),fill=K)
         my=g["mouth"][1]+bob
-        d.line((cx-2,my,cx+1,my),fill=s["lips"]); d.point((cx-3,my-1),fill=s["lips"]); d.point((cx+2,my-1),fill=s["lips"])
-        if s["hair"]=="curly": d.line((cx-1,my+1,cx,my+1),fill=WHITE)   # big smile like the photo
+        if view=="cheer":
+            d.rectangle((cx-2,my-1,cx+1,my+1),fill=(120,30,50)); d.line((cx-2,my-1,cx+1,my-1),fill=WHITE)
+            d.point((cx-3,my-1),fill=s["lips"]); d.point((cx+2,my-1),fill=s["lips"])
+        else:
+            d.line((cx-2,my,cx+1,my),fill=s["lips"]); d.point((cx-3,my-1),fill=s["lips"]); d.point((cx+2,my-1),fill=s["lips"])
+            if s["hair"]=="curly": d.line((cx-1,my+1,cx,my+1),fill=WHITE)   # big smile like the photo
         d.point((cx-6,ey+3),fill=BLUSH); d.point((cx+5,ey+3),fill=BLUSH)
+
+def cheer_arms(d,s,g,f,bob):
+    """Both arms up above the shoulders, waving a little between frames."""
+    W=s["W"]; t=g["torso"]; tw=t[2]-t[0]+2; x0=W//2-tw//2; x1=x0+tw; ty=t[1]+bob; L=g["armlen"]
+    reach=5+f if W==30 else 3+f
+    for sx,hx in ((x0+1,x0-reach),(x1-1,x1+reach)):
+        hy=ty-L-(6 if W==30 else 3)+(f if sx<W//2 else 1-f)
+        d.line((sx,ty+2,hx,hy),fill=s["sleeve2"],width=3); d.line((sx,ty+2,hx,hy),fill=s["sleeve"],width=1)
+        d.rectangle((hx-1,hy-2,hx+1,hy),fill=s["skin"])
 
 def draw(name,view,f=0):
     s=SPEC[name]; g=geom(s); im=Image.new("RGBA",(s["W"],s["H"]),(0,0,0,0)); d=ImageDraw.Draw(im)
-    bob=body(d,im,s,g,view,f,s["OY"])
+    bob=body(d,im,s,g,"front" if view=="cheer" and False else view,f,s["OY"])
     if s.get("floral"): floral(im,s["top"],s["top2"])
     head(d,im,s,g,view,bob)
+    if view=="cheer": cheer_arms(d,s,g,f,bob)
     return outline(im)
 def frames(name): return [draw(name,"side",f) for f in range(4)]+[draw(name,"front")]
 def export(dst):
@@ -188,6 +202,7 @@ def export(dst):
         fr=frames(n)
         for i in range(4): fr[i].save(f"{dst}/{n}_walk{i}.png")
         fr[4].save(f"{dst}/{n}_front.png")
+        for i in range(2): draw(n,"cheer",i).save(f"{dst}/{n}_cheer{i}.png")
 if __name__=="__main__":
     Z=6; S=Image.new("RGBA",(5*32*Z,3*54*Z),(37,30,72,255))
     for r,n in enumerate(SPEC):
