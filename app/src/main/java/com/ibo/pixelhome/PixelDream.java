@@ -16,7 +16,7 @@ import android.widget.TextView;
 public class PixelDream extends DreamService {
     final Handler handler = new Handler(Looper.getMainLooper());
     SkyView sky;
-    TextView clock, date, info;
+    TextView name, clock, date, info, note;
     PixelIcon weather;
     String weatherText = "";
 
@@ -34,8 +34,10 @@ public class PixelDream extends DreamService {
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
         col.setGravity(Gravity.CENTER_HORIZONTAL);
-        clock = text(font, 56, Color.WHITE);
-        date = text(font, 12, PixelActivity.YELLOW);
+        name = text(font, 14, SkyView.accentNow());
+        clock = text(font, 52, Color.WHITE);
+        date = text(font, 12, Color.WHITE);
+        note = text(font, 10, Color.WHITE);
         LinearLayout row = new LinearLayout(this);
         row.setGravity(Gravity.CENTER_VERTICAL);
         weather = new PixelIcon(this);
@@ -44,9 +46,11 @@ public class PixelDream extends DreamService {
         LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         ip.leftMargin = dp(10);
         row.addView(info, ip);
-        col.addView(clock);
-        col.addView(date, margins(18));
+        col.addView(name, margins(0));
+        col.addView(clock, margins(22));
+        col.addView(date, margins(20));
         col.addView(row, margins(16));
+        col.addView(note, margins(18));
         FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP);
         cp.topMargin = dp(70);
@@ -71,12 +75,25 @@ public class PixelDream extends DreamService {
         t.setTextColor(color);
         t.setShadowLayer(0.01f, dp(3), dp(3), PixelActivity.INK);
         t.setIncludeFontPadding(false);
+        t.setSingleLine(true);
         return t;
     }
 
+    /** Every second: the clock with seconds. */
+    final Runnable second = new Runnable() {
+        @Override public void run() {
+            clock.setText(HomeInfo.clockSeconds());
+            handler.postDelayed(this, 1000 - System.currentTimeMillis() % 1000);
+        }
+    };
+
+    /** Every 15 seconds: name, date, weather, prayer, pinned note. */
     final Runnable tick = new Runnable() {
         @Override public void run() {
-            clock.setText(HomeInfo.clock());
+            name.setText(HomeInfo.name(PixelDream.this).toUpperCase(HomeInfo.ID));
+            name.setTextColor(SkyView.accentNow());
+            String n = HomeInfo.pinnedNote(PixelDream.this);
+            note.setText(n.isEmpty() ? "" : "> " + n);
             date.setText(HomeInfo.date());
             info.setText(weatherText + HomeInfo.nextPrayer());
             HomeInfo.weather(PixelDream.this, (t, code, isDay) -> {
@@ -92,6 +109,7 @@ public class PixelDream extends DreamService {
     public void onDreamingStarted() {
         super.onDreamingStarted();
         sky.start();
+        handler.post(second);
         handler.post(tick);
     }
 
@@ -99,6 +117,7 @@ public class PixelDream extends DreamService {
     public void onDreamingStopped() {
         super.onDreamingStopped();
         sky.stop();
+        handler.removeCallbacks(second);
         handler.removeCallbacks(tick);
     }
 }

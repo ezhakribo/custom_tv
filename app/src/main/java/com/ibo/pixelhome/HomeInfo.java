@@ -32,8 +32,24 @@ final class HomeInfo {
     static String greeting(Context c) {
         int h = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
         String part = h >= 4 && h < 10 ? "PAGI" : h < 15 && h >= 10 ? "SIANG" : h >= 15 && h < 18 ? "SORE" : "MALAM";
-        String name = prefs(c).getString("name", "IBO").trim();
+        String name = name(c);
         return "SELAMAT " + part + (name.isEmpty() ? "" : ", " + name.toUpperCase(ID));
+    }
+
+    /** Family name shown in the greeting and the screensaver. */
+    static String name(Context c) {
+        String n = prefs(c).getString("name", "IBO'S FAMILY").trim();
+        if (n.equalsIgnoreCase("IBO")) n = "IBO'S FAMILY";        // old default -> family name
+        return n;
+    }
+
+    /** The note pinned to the home screen, or "" if none. */
+    static String pinnedNote(Context c) {
+        return NotesActivity.pinnedText(c);
+    }
+
+    static String clockSeconds() {
+        return new SimpleDateFormat("HH:mm:ss", Locale.ROOT).format(new Date());
     }
 
     static String date() {

@@ -75,6 +75,22 @@
             </intent-filter>
         </service>
 
+        <!-- Catatan Keluarga: its own entry in the TV's app list -->
+        <activity
+            android:name=".NotesActivity"
+            android:exported="true"
+            android:label="Catatan Keluarga"
+            android:banner="@drawable/banner_notes"
+            android:icon="@drawable/thumb_notes"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.ibo.pixelhome.notes"
+            android:screenOrientation="landscape">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".AppsActivity"
             android:exported="false"

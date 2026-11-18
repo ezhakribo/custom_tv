@@ -8,92 +8,117 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 
 /**
- * The walking character with two pet cats.
- * He walks back and forth along the bottom; at each edge he stops, faces the viewer with a smile,
- * then turns around. The cats trot after him and catch up when he stops.
+ * IBO's family walking along the bottom of the screen: dad in front, then mum, the little one
+ * and the two cats. Everyone follows the exact path dad walked, a few steps behind, so at each
+ * edge the family stops, smiles at the camera, and turns around one after the other.
  */
 final class Walker {
-    static final int HERO_W = 32, HERO_H = 56, CAT_W = 20, CAT_H = 11;
+    static final int SPEED = 3;          // sprite pixels per step (8 steps a second)
+    static final int PAUSE = 14;         // steps dad stands smiling at an edge
+    static final int HISTORY = 64;
 
-    final Bitmap[] hero = new Bitmap[4], catA = new Bitmap[4], catB = new Bitmap[4];
-    final Bitmap heroFront;
-    final Paint p = new Paint(), shadow = new Paint();
-
-    float x = -1;        // hero's left edge, screen pixels
-    int dir = 1, step, pause;
-    final Cat[] cats = {new Cat(26), new Cat(48)};
-
-    /** A cat that follows the hero at a fixed gap (in sprite pixels). */
-    static final class Cat {
-        final int gap;
-        float x = -1;
+    /** One family member (or cat). */
+    static final class Member {
+        final Bitmap[] walk;
+        final Bitmap front;              // null for the cats
+        final int delay;                 // steps behind dad
+        float x = Float.NaN;             // left edge, screen pixels
         int face = 1, step;
         boolean moving;
-        Cat(int gap) { this.gap = gap; }
+        Member(Bitmap[] walk, Bitmap front, int delay) { this.walk = walk; this.front = front; this.delay = delay; }
     }
+
+    final Member[] family;
+    final Paint p = new Paint(), shadow = new Paint();
+    final float[] hist = new float[HISTORY];
+    int histCount, dir = 1, pause;
 
     Walker(Resources r) {
         BitmapFactory.Options o = new BitmapFactory.Options();
         o.inScaled = false;
-        int[] h = {R.drawable.hero_walk0, R.drawable.hero_walk1, R.drawable.hero_walk2, R.drawable.hero_walk3};
-        int[] a = {R.drawable.cat_a0, R.drawable.cat_a1, R.drawable.cat_a2, R.drawable.cat_a3};
-        int[] b = {R.drawable.cat_b0, R.drawable.cat_b1, R.drawable.cat_b2, R.drawable.cat_b3};
-        for (int i = 0; i < 4; i++) {
-            hero[i] = BitmapFactory.decodeResource(r, h[i], o);
-            catA[i] = BitmapFactory.decodeResource(r, a[i], o);
-            catB[i] = BitmapFactory.decodeResource(r, b[i], o);
-        }
-        heroFront = BitmapFactory.decodeResource(r, R.drawable.hero_front, o);
+        family = new Member[]{
+                new Member(load(r, o, R.drawable.dad_walk0, R.drawable.dad_walk1, R.drawable.dad_walk2, R.drawable.dad_walk3),
+                        BitmapFactory.decodeResource(r, R.drawable.dad_front, o), 0),
+                new Member(load(r, o, R.drawable.mom_walk0, R.drawable.mom_walk1, R.drawable.mom_walk2, R.drawable.mom_walk3),
+                        BitmapFactory.decodeResource(r, R.drawable.mom_front, o), 11),
+                new Member(load(r, o, R.drawable.kid_walk0, R.drawable.kid_walk1, R.drawable.kid_walk2, R.drawable.kid_walk3),
+                        BitmapFactory.decodeResource(r, R.drawable.kid_front, o), 20),
+                new Member(load(r, o, R.drawable.cat_a0, R.drawable.cat_a1, R.drawable.cat_a2, R.drawable.cat_a3), null, 28),
+                new Member(load(r, o, R.drawable.cat_b0, R.drawable.cat_b1, R.drawable.cat_b2, R.drawable.cat_b3), null, 34)};
         p.setFilterBitmap(false);
         p.setAntiAlias(false);
         shadow.setColor(0x55000000);
     }
 
-    /** Whole-number zoom for crisp pixels: about the same height as the old character. */
+    static Bitmap[] load(Resources r, BitmapFactory.Options o, int... ids) {
+        Bitmap[] b = new Bitmap[ids.length];
+        for (int i = 0; i < ids.length; i++) b[i] = BitmapFactory.decodeResource(r, ids[i], o);
+        return b;
+    }
+
+    /** Whole-number zoom so pixels stay crisp (3x on a 1080p TV). */
     static int zoom(float px) {
         return Math.max(1, Math.round(px / 2f));
+    }
+
+    void push(float x) {
+        hist[histCount % HISTORY] = x;
+        histCount++;
+    }
+
+    /** Dad's position {@code back} steps ago. */
+    float past(int back) {
+        int i = Math.max(0, histCount - 1 - back);
+        return hist[i % HISTORY];
     }
 
     /** Called 8 times a second. */
     void update(int viewW, float px) {
         int k = zoom(px);
-        float heroW = HERO_W * k, margin = 4 * k, speed = 3 * k;
-        if (x < 0) {
-            x = viewW * 0.2f;
-            for (Cat c : cats) c.x = x - c.gap * k;
+        Member dad = family[0];
+        float speed = SPEED * k, dadW = dad.walk[0].getWidth() * k, margin = 4 * k;
+        if (Float.isNaN(dad.x)) {                        // start mid-screen, family already lined up behind
+            dad.x = viewW * 0.35f;
+            for (int i = HISTORY - 1; i >= 0; i--) push(dad.x - i * speed);
         }
         if (pause > 0) {
-            if (--pause == 0) dir = -dir;                  // done smiling: turn around
+            if (--pause == 0) dir = -dir;                // done smiling: turn around
+            dad.moving = false;
         } else {
-            step = (step + 1) % 4;
-            x += dir * speed;
-            if (x > viewW - heroW - margin) { x = viewW - heroW - margin; pause = 12; }
-            if (x < margin) { x = margin; pause = 12; }
+            dad.step = (dad.step + 1) % 4;
+            dad.x += dir * speed;
+            dad.face = dir;
+            dad.moving = true;
+            if (dad.x > viewW - dadW - margin) { dad.x = viewW - dadW - margin; pause = PAUSE; }
+            if (dad.x < margin) { dad.x = margin; pause = PAUSE; }
+            push(dad.x);
         }
-        for (Cat c : cats) {
-            float target = dir > 0 ? x - c.gap * k : x + heroW + (c.gap - CAT_W) * k;
-            float d = target - c.x, max = speed * 1.3f;
-            c.moving = Math.abs(d) > k;
-            if (c.moving) {
-                c.x += Math.max(-max, Math.min(max, d));
-                c.face = d > 0 ? 1 : -1;
-                c.step = (c.step + 1) % 4;
-            } else {
-                c.face = dir;
+        for (int i = 1; i < family.length; i++) {
+            Member m = family[i];
+            float target = past(m.delay);
+            float d = Float.isNaN(m.x) ? 0 : target - m.x;
+            m.moving = Math.abs(d) > 0.5f;
+            if (m.moving) {
+                m.face = d > 0 ? 1 : -1;
+                m.step = (m.step + 1) % 4;
             }
+            m.x = target;
         }
     }
 
     void draw(Canvas c, float px, float feetY) {
         int k = zoom(px);
-        Bitmap[][] catFrames = {catA, catB};
-        for (int i = 0; i < cats.length; i++) {
-            Cat cat = cats[i];
-            Bitmap b = catFrames[i][cat.moving ? cat.step : 1];
-            drawSprite(c, b, cat.x, feetY, k, cat.face < 0);
+        Member dad = family[0];
+        float dadW = dad.walk[0].getWidth() * k;
+        for (int i = family.length - 1; i >= 0; i--) {   // back of the line first, dad on top
+            Member m = family[i];
+            if (Float.isNaN(m.x)) continue;
+            Bitmap b = m.moving ? m.walk[m.step] : (m.front != null ? m.front : m.walk[1]);
+            float w = b.getWidth() * k;
+            float left = m.x + (dadW - w) / 2f;          // everyone walks on dad's centre line
+            boolean mirror = (m.moving || m.front == null) && m.face < 0;
+            drawSprite(c, b, left, feetY, k, mirror);
         }
-        Bitmap h = pause > 0 ? heroFront : hero[step];
-        drawSprite(c, h, x, feetY, k, pause == 0 && dir < 0);
     }
 
     void drawSprite(Canvas c, Bitmap b, float left, float feetY, int k, boolean mirror) {

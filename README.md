@@ -1,4 +1,4 @@
-# Pixel Home 2.4 – home screen pixel-art untuk Android TV
+# Pixel Home 2.7 – home screen pixel-art untuk Android TV
 
 ## Build
 Upload semua isi folder ini ke GitHub, tunggu centang hijau di Actions,
@@ -17,9 +17,10 @@ download PixelHome-apk, lalu:
   dengan transisi dissolve pixel + geser pelan + judul. Matikan/nyalakan: tahan OK pada SETELAN > "Slideshow",
   atau  platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez slides false
   (gambar dibuat oleh tools/build.py)
-- Karakter berambut afro (dari gambar pemilik) + 2 kucing (oranye & tuxedo) berjalan bolak-balik di bawah;
-  di ujung layar ia berhenti menghadap depan sambil tersenyum lalu berbalik (juga di screensaver).
-  Gambar diubah oleh tools/hero_from_image.py, kucing digambar oleh tools/cats.py.
+- Keluarga IBO berjalan di bawah (dari foto keluarga): ayah (rambut ikal, kacamata bulat, kaos hitam),
+  ibu (hijab krem, kardigan putih), si kecil (poni, kuncir jepit pink, baju bunga pink)
+  dan 2 kucing; di ujung layar semua berhenti menghadap depan sambil tersenyum lalu berbalik.
+  Digambar oleh tools/family_chars.py (warna/baju bisa diubah di bagian SPEC), kucing oleh tools/cats.py.
   Matikan/nyalakan: tahan OK pada SETELAN > "Karakter berjalan", atau
       platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez walker false
 
@@ -29,6 +30,12 @@ download PixelHome-apk, lalu:
 - Efek kedalaman: langit dan gunung bergeser sedikit saat fokus pindah kiri/kanan.
 - Animasi pembuka "PIXEL HOME" saat TV baru menyala.
 - Semua gambar memakai satu palet 64 warna (tools/unify_palette.py, contoh di tools/palette.png).
+
+## Catatan Keluarga (2.5)
+Tombol CATATAN di layar utama, atau "Catatan Keluarga" di daftar aplikasi.
+OK = buka/ubah, tahan OK = ganti warna, sematkan di layar utama & screensaver, hapus.
+Tambah dari komputer (perhatikan tanda kutip ganda + tunggal):
+    platform-tools\adb shell am start -n com.ibo.pixelhome/.NotesActivity --es title "'Belanja'" --es add "'Beli susu dan roti'"
 
 ## Perintah (dari folder Desktop)
 Nama di sapaan:

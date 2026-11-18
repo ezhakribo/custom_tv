@@ -77,7 +77,7 @@ public class MainActivity extends PixelActivity {
 
     final Handler handler = new Handler(Looper.getMainLooper());
     SharedPreferences prefs;
-    TextView clock, greeting, date, infoText;
+    TextView clock, greeting, date, infoText, pinned;
     PixelIcon weatherIcon;
     View firstTile;
     String pendingPhotoSlot;
@@ -105,14 +105,23 @@ public class MainActivity extends PixelActivity {
         left.setOrientation(LinearLayout.VERTICAL);
         greeting = text("", 16, YELLOW);
         date = text("", 9, LILAC);
-        left.addView(greeting);
+        greeting.setSingleLine(true);
+        date.setSingleLine(true);
+        left.addView(greeting, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         dlp.topMargin = dp(10);
         left.addView(date, dlp);
+        pinned = text("", 8, Color.WHITE);
+        pinned.setSingleLine(true);
+        LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        plp.topMargin = dp(8);
+        left.addView(pinned, plp);
         top.addView(left, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
+        top.addView(tile("CATATAN", crisp(R.drawable.thumb_notes), 40, 40, 6,
+                () -> startActivity(new Intent(this, NotesActivity.class)), null));
         top.addView(tile("APLIKASI", crisp(R.drawable.thumb_apps), 40, 40, 6,
-                () -> startActivity(new Intent(this, AppsActivity.class)), null));
+                () -> startActivity(new Intent(this, AppsActivity.class)), null), gap(8));
         top.addView(tile("SETELAN", crisp(R.drawable.thumb_settings), 40, 40, 6,
                 () -> safeStart(new Intent(Settings.ACTION_SETTINGS), "Setelan"), this::pixelMenu), gap(8));
 
@@ -120,7 +129,8 @@ public class MainActivity extends PixelActivity {
         right.setOrientation(LinearLayout.VERTICAL);
         right.setGravity(Gravity.END);
         clock = text("", 20, Color.WHITE);
-        right.addView(clock);
+        clock.setSingleLine(true);
+        right.addView(clock, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout info = row();
         weatherIcon = new PixelIcon(this);
         info.addView(weatherIcon, new LinearLayout.LayoutParams(dp(16), dp(16)));
@@ -450,6 +460,8 @@ public class MainActivity extends PixelActivity {
             clock.setText(HomeInfo.clock());
             greeting.setText(HomeInfo.greeting(MainActivity.this));
             greeting.setTextColor(SkyView.accentNow());
+            String note = HomeInfo.pinnedNote(MainActivity.this);
+            pinned.setText(note.isEmpty() ? "" : "> " + note);
             date.setText(HomeInfo.date());
             infoText.setText(weatherText + HomeInfo.nextPrayer());
             HomeInfo.weather(MainActivity.this, (t, code, isDay) -> {
