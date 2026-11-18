@@ -13,6 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,7 +38,8 @@ public class AppsActivity extends PixelActivity {
 
         PackageManager pm = getPackageManager();
         Intent query = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
-        List<ResolveInfo> apps = pm.queryIntentActivities(query, 0);
+        List<ResolveInfo> apps = new ArrayList<>(pm.queryIntentActivities(query, 0));
+        apps.addAll(pm.queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0));
         apps.sort((a, b) -> a.loadLabel(pm).toString().compareToIgnoreCase(b.loadLabel(pm).toString()));
 
         Set<String> seen = new HashSet<>();
@@ -46,7 +48,7 @@ public class AppsActivity extends PixelActivity {
         View first = null;
         for (ResolveInfo r : apps) {
             ActivityInfo a = r.activityInfo;
-            if (a.packageName.equals(getPackageName()) || !seen.add(a.packageName + "/" + a.name)) continue;
+            if (a.packageName.equals(getPackageName()) || !seen.add(a.packageName)) continue;
             if (n % PER_ROW == 0) {
                 row = row();
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -73,8 +75,10 @@ public class AppsActivity extends PixelActivity {
     }
 
     void open(ComponentName cn) {
-        Intent i = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
-                .setComponent(cn).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        Intent i = getPackageManager().getLeanbackLaunchIntentForPackage(cn.getPackageName());
+        if (i == null) i = getPackageManager().getLaunchIntentForPackage(cn.getPackageName());
+        if (i == null) i = new Intent(Intent.ACTION_MAIN).setComponent(cn);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             startActivity(i);
         } catch (RuntimeException e) {

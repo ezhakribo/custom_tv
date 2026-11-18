@@ -65,12 +65,14 @@ public class MainActivity extends PixelActivity {
             new Slot("youtube", "YOUTUBE", "app", R.drawable.thumb_youtube, YOUTUBE),
             new Slot("netflix", "NETFLIX", "app", R.drawable.thumb_netflix, NETFLIX),
             new Slot("disney", "DISNEY+", "app", R.drawable.thumb_disney, DISNEY),
-            new Slot("spotify", "SPOTIFY", "app", R.drawable.thumb_spotify, SPOTIFY)};
+            new Slot("spotify", "SPOTIFY", "app", R.drawable.thumb_spotify, SPOTIFY),
+            new Slot("custom1", "TAMBAH", "custom", R.drawable.thumb_add)};
     static final Slot[] ROW_INPUTS = {
             new Slot("tv", "TV", "tv", R.drawable.thumb_tv),
             new Slot("av", "DIGITAL TV", "av", R.drawable.thumb_digitaltv),
             new Slot("hdmi3", "GAMES", "hdmi", R.drawable.thumb_games),
-            new Slot("fav", "FAVORIT", "fav", R.drawable.thumb_favorite)};
+            new Slot("fav", "FAVORIT", "fav", R.drawable.thumb_favorite),
+            new Slot("game", "GAME", "custom", R.drawable.thumb_arcade)};
     static final String[] SMARTTUBE_THEN_YOUTUBE = {"com.teamsmart.videomanager.tv", "com.liskovsoft.smarttubetv.beta",
             "com.liskovsoft.smarttubetv", "com.google.android.youtube.tv"};
     static final int REQ_PHOTO = 7;
@@ -180,12 +182,12 @@ public class MainActivity extends PixelActivity {
         List<Slot> ordered = order(key, slots);
         for (int i = 0; i < ordered.size(); i++) {
             Slot s = ordered.get(i);
-            LinearLayout t = tile(label(s), art(s), 160, 90, 10, () -> open(s), () -> slotMenu(key, slots, s));
+            LinearLayout t = tile(label(s), art(s), 144, 81, 10, () -> open(s), () -> slotMenu(key, slots, s));
             View frame = t.getChildAt(0);
             frame.setTag(s.id);
             tiles.add(frame);
             if (firstTile == null) firstTile = frame;
-            r.addView(t, gap(i == 0 ? 0 : 28));
+            r.addView(t, gap(i == 0 ? 0 : 20));
         }
         return r;
     }
@@ -226,6 +228,7 @@ public class MainActivity extends PixelActivity {
             case "av": openInput("Digital TV (AV)", findAv()); break;
             case "hdmi": openInput("Games (HDMI 3)", findHdmi(3)); break;
             case "fav": openFavorite(); break;
+            case "custom": pickApp(s); break;
             default: launch(label(s), s.pkgs);
         }
     }
@@ -250,7 +253,7 @@ public class MainActivity extends PixelActivity {
         }
         items.add("Geser ke kiri"); acts.add(() -> move(rowKey, slots, s, -1));
         items.add("Geser ke kanan"); acts.add(() -> move(rowKey, slots, s, 1));
-        if (!s.kind.equals("app") && !s.kind.equals("fav")) { items.add("Lihat daftar input"); acts.add(this::showInputs); }
+        if (s.kind.equals("tv") || s.kind.equals("av") || s.kind.equals("hdmi")) { items.add("Lihat daftar input"); acts.add(this::showInputs); }
         items.add("Suara 8-bit: " + (soundsOn() ? "NYALA" : "MATI"));
         acts.add(() -> prefs.edit().putBoolean("sounds", !soundsOn()).apply());
         items.add("Demo langit 24 jam (48 detik)"); acts.add(this::skyDemo);
@@ -304,8 +307,9 @@ public class MainActivity extends PixelActivity {
 
     void pickApp(Slot s) {
         PackageManager pm = getPackageManager();
-        List<ResolveInfo> apps = pm.queryIntentActivities(
-                new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER), 0);
+        List<ResolveInfo> apps = new ArrayList<>(pm.queryIntentActivities(
+                new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER), 0));
+        apps.addAll(pm.queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0));
         apps.sort(Comparator.comparing(r -> r.loadLabel(pm).toString().toLowerCase(Locale.ROOT)));
         List<String> names = new ArrayList<>(), pkgs = new ArrayList<>();
         for (ResolveInfo r : apps) {
