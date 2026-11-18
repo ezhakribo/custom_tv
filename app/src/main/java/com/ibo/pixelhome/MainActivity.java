@@ -284,7 +284,8 @@ public class MainActivity extends PixelActivity {
         boolean walker = prefs.getBoolean("walker", true);
         String[] items = {"Suara 8-bit: " + (soundsOn() ? "NYALA" : "MATI"), "Demo langit 24 jam (48 detik)",
                 "Atur ulang semua tile", "Karakter berjalan: " + (walker ? "NYALA" : "MATI"),
-                "Slideshow: " + (prefs.getBoolean("slides", true) ? "NYALA" : "MATI"), "Rayakan sekarang!"};
+                "Slideshow: " + (prefs.getBoolean("slides", true) ? "NYALA" : "MATI"), "Rayakan sekarang!",
+                "Blokir home bawaan (PatchWall/Google): " + (prefs.getBoolean(KeyService.BLOCK_STOCK, true) ? "NYALA" : "MATI")};
         new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle("PIXEL HOME")
                 .setItems(items, (d, which) -> {
@@ -475,6 +476,11 @@ public class MainActivity extends PixelActivity {
         o.inSampleSize = sample;
         Bitmap src = BitmapFactory.decodeFile(f.getAbsolutePath(), o);
         if (src == null) return null;
+        return pixelate(src);
+    }
+
+    /** Centre-crop to 16:9, shrink to 64x36, reduce colours, add the dark tile border. */
+    static Bitmap pixelate(Bitmap src) {
         int w = src.getWidth(), h = src.getHeight(), cw = w, ch = w * 9 / 16;
         if (ch > h) { ch = h; cw = h * 16 / 9; }
         Bitmap crop = Bitmap.createBitmap(src, (w - cw) / 2, (h - ch) / 2, cw, ch);

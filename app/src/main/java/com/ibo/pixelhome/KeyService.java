@@ -4,6 +4,9 @@ import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.media.AudioManager;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -30,6 +33,13 @@ public class KeyService extends AccessibilityService {
     static final String LEARN = "learn_target";   // what the next pressed button should open
     static final String MAP = "key_";             // key_<keycode> -> target
     static final String PIXEL_VOLUME = "pixel_volume";
+    static final String BLOCK_STOCK = "block_stock";
+
+    /** Stock home screens (with autoplaying trailers/ads) that Pixel Home replaces whenever they appear. */
+    static final Set<String> STOCK_HOMES = new HashSet<>(Arrays.asList(
+            "com.mitv.tvhome.atv", "com.google.android.tvlauncher",
+            "com.google.android.leanbacklauncher", "com.google.android.apps.tv.launcherx"));
+    long lastTakeover;
 
     VolumeOverlay volume;
 
@@ -122,8 +132,28 @@ public class KeyService extends AccessibilityService {
         }
     }
 
+    /** Right after the TV starts, make sure Pixel Home is what's on screen. */
     @Override
-    public void onAccessibilityEvent(AccessibilityEvent event) { }
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+        if (SystemClock.elapsedRealtime() < 3 * 60 * 1000L) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> open("home"), 2500);
+        }
+    }
+
+    /** If PatchWall or Google's home screen shows up, swap it for Pixel Home straight away. */
+    @Override
+    public void onAccessibilityEvent(AccessibilityEvent event) {
+        if (event == null || event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
+        CharSequence pkg = event.getPackageName();
+        if (pkg == null || !STOCK_HOMES.contains(pkg.toString())) return;
+        if (!getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(BLOCK_STOCK, true)) return;
+        long now = SystemClock.elapsedRealtime();
+        if (now - lastTakeover < 2000) return;
+        lastTakeover = now;
+        Log.i(TAG, "replacing " + pkg + " with Pixel Home");
+        open("home");
+    }
 
     @Override
     public void onInterrupt() { }
