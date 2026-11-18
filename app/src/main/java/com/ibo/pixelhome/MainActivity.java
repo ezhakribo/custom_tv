@@ -44,7 +44,7 @@ public class MainActivity extends PixelActivity {
     static final String TAG = "PixelHome";
 
     // ===================== EDIT HERE =====================
-    static final String[] YOUTUBE = {"com.teamsmart.videomanager.tv", "com.liskovsoft.smarttubetv", "com.google.android.youtube.tv"};
+    static final String[] YOUTUBE = {"org.smarttube.stable", "org.smarttube.beta", "com.teamsmart.videomanager.tv", "com.liskovsoft.smarttubetv", "com.google.android.youtube.tv"};
     static final String[] NETFLIX = {"com.netflix.ninja"};
     static final String[] DISNEY  = {"com.disney.disneyplus"};
     static final String[] SPOTIFY = {"com.spotify.tv.android"};
@@ -73,7 +73,7 @@ public class MainActivity extends PixelActivity {
             new Slot("hdmi3", "GAMES", "hdmi", R.drawable.thumb_games),
             new Slot("fav", "FAVORIT", "fav", R.drawable.thumb_favorite),
             new Slot("game", "GAME", "custom", R.drawable.thumb_arcade)};
-    static final String[] SMARTTUBE_THEN_YOUTUBE = {"com.teamsmart.videomanager.tv", "com.liskovsoft.smarttubetv.beta",
+    static final String[] SMARTTUBE_THEN_YOUTUBE = {"org.smarttube.stable", "org.smarttube.beta", "com.teamsmart.videomanager.tv", "com.liskovsoft.smarttubetv.beta",
             "com.liskovsoft.smarttubetv", "com.google.android.youtube.tv"};
     static final int REQ_PHOTO = 7;
 

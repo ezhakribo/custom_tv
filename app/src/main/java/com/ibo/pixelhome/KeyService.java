@@ -38,7 +38,7 @@ public class KeyService extends AccessibilityService {
         ALIASES.put("netflix", "com.netflix.ninja");
         ALIASES.put("disney", "com.disney.disneyplus");
         ALIASES.put("prime", "com.amazon.amazonvideo.livingroom");
-        ALIASES.put("youtube", "com.teamsmart.videomanager.tv");
+        ALIASES.put("youtube", "org.smarttube.stable");
         ALIASES.put("spotify", "com.spotify.tv.android");
     }
 
