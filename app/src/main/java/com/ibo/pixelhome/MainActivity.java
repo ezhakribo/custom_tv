@@ -263,7 +263,7 @@ public class MainActivity extends PixelActivity {
         if (prefs.contains("pkg_" + s.id) || prefs.contains("img_" + s.id) || prefs.contains("label_" + s.id)) {
             items.add("Kembalikan seperti semula");
             acts.add(() -> {
-                prefs.edit().remove("pkg_" + s.id).remove("img_" + s.id).remove("label_" + s.id).apply();
+                prefs.edit().remove("pkg_" + s.id).remove("img_" + s.id).remove("label_" + s.id).remove("autoimg_" + s.id).apply();
                 recreate();
             });
         }
@@ -292,11 +292,16 @@ public class MainActivity extends PixelActivity {
                     else if (which == 1) skyDemo();
                     else if (which == 3) { prefs.edit().putBoolean("walker", !walker).apply(); recreate(); }
                     else if (which == 5) Walker.requestCelebrate = true;
+                    else if (which == 6) {
+                        boolean on = !prefs.getBoolean(KeyService.BLOCK_STOCK, true);
+                        prefs.edit().putBoolean(KeyService.BLOCK_STOCK, on).apply();
+                        toast(on ? "Home bawaan akan diganti Pixel Home" : "Home bawaan tidak diblokir lagi");
+                    }
                     else if (which == 4) { prefs.edit().putBoolean("slides", !prefs.getBoolean("slides", true)).apply(); recreate(); }
                     else {
                         SharedPreferences.Editor ed = prefs.edit();
                         for (String k : prefs.getAll().keySet())
-                            if (k.startsWith("pkg_") || k.startsWith("img_") || k.startsWith("label_") || k.startsWith("order_")) ed.remove(k);
+                            if (k.startsWith("pkg_") || k.startsWith("img_") || k.startsWith("label_") || k.startsWith("order_") || k.startsWith("autoimg_")) ed.remove(k);
                         ed.apply();
                         recreate();
                     }
@@ -322,26 +327,67 @@ public class MainActivity extends PixelActivity {
         recreate();
     }
 
+    /** List every app (TV and phone apps) in the background, then let the user pick one for this tile. */
     void pickApp(Slot s) {
+        toast("Memuat daftar aplikasi...");
         PackageManager pm = getPackageManager();
-        List<ResolveInfo> apps = new ArrayList<>(pm.queryIntentActivities(
-                new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER), 0));
-        apps.addAll(pm.queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0));
-        apps.sort(Comparator.comparing(r -> r.loadLabel(pm).toString().toLowerCase(Locale.ROOT)));
-        List<String> names = new ArrayList<>(), pkgs = new ArrayList<>();
-        for (ResolveInfo r : apps) {
-            if (r.activityInfo.packageName.equals(getPackageName()) || pkgs.contains(r.activityInfo.packageName)) continue;
-            names.add(r.loadLabel(pm).toString());
-            pkgs.add(r.activityInfo.packageName);
-        }
-        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                .setTitle("Pilih aplikasi")
-                .setItems(names.toArray(new String[0]), (d, w) -> {
-                    String l = names.get(w).toUpperCase(Locale.ROOT);
-                    prefs.edit().putString("pkg_" + s.id, pkgs.get(w))
-                            .putString("label_" + s.id, l.length() > 12 ? l.substring(0, 12) : l).apply();
-                    recreate();
-                }).show();
+        new Thread(() -> {
+            List<ResolveInfo> found = new ArrayList<>(pm.queryIntentActivities(
+                    new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER), 0));
+            found.addAll(pm.queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0));
+            List<String[]> apps = new ArrayList<>();                 // {label, package}, each label loaded once
+            java.util.Set<String> seen = new java.util.HashSet<>();
+            for (ResolveInfo r : found) {
+                String pkg = r.activityInfo.packageName;
+                if (pkg.equals(getPackageName()) || !seen.add(pkg)) continue;
+                apps.add(new String[]{r.loadLabel(pm).toString(), pkg});
+            }
+            apps.sort((a, b) -> a[0].compareToIgnoreCase(b[0]));
+            String[] names = new String[apps.size()];
+            for (int i = 0; i < names.length; i++) names[i] = apps.get(i)[0];
+            runOnUiThread(() -> {
+                if (isFinishing()) return;
+                new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                        .setTitle("Pilih aplikasi")
+                        .setItems(names, (d, w) -> assignApp(s, apps.get(w)[1], apps.get(w)[0]))
+                        .show();
+            });
+        }).start();
+    }
+
+    /** Point a tile at an app. Custom tiles (+ and GAME) get a pixel-art picture made from the app's own banner or icon. */
+    void assignApp(Slot s, String pkg, String name) {
+        String l = name.toUpperCase(Locale.ROOT);
+        prefs.edit().putString("pkg_" + s.id, pkg)
+                .putString("label_" + s.id, l.length() > 12 ? l.substring(0, 12) : l).apply();
+        boolean ownPhoto = prefs.contains("img_" + s.id) && !prefs.getBoolean("autoimg_" + s.id, false);
+        if (!s.kind.equals("custom") || ownPhoto) { recreate(); return; }
+        new Thread(() -> {
+            try {
+                PackageManager pm = getPackageManager();
+                Drawable banner = pm.getApplicationBanner(pkg);
+                Bitmap big = Bitmap.createBitmap(320, 180, Bitmap.Config.ARGB_8888);
+                android.graphics.Canvas c = new android.graphics.Canvas(big);
+                c.drawColor(0xFF241A4A);
+                if (banner != null) {
+                    banner.setBounds(0, 0, 320, 180);
+                    banner.draw(c);
+                } else {                                                // phone app: icon in the middle
+                    Drawable icon = pm.getApplicationIcon(pkg);
+                    icon.setBounds(100, 30, 220, 150);
+                    icon.draw(c);
+                }
+                Bitmap px = pixelate(big);
+                File out = new File(getFilesDir(), "tile_" + s.id + ".png");
+                try (FileOutputStream fo = new FileOutputStream(out)) {
+                    px.compress(Bitmap.CompressFormat.PNG, 100, fo);
+                }
+                prefs.edit().putString("img_" + s.id, out.getAbsolutePath()).putBoolean("autoimg_" + s.id, true).apply();
+            } catch (Exception e) {
+                Log.w(TAG, "could not make tile picture for " + pkg, e);
+            }
+            runOnUiThread(this::recreate);
+        }).start();
     }
 
     // ---------- own photos -> pixel art ----------
@@ -412,7 +458,7 @@ public class MainActivity extends PixelActivity {
                             runOnUiThread(() -> toast("Gagal menyimpan foto"));
                             return;
                         }
-                        prefs.edit().putString("img_" + slot, out.getAbsolutePath()).apply();
+                        prefs.edit().putString("img_" + slot, out.getAbsolutePath()).putBoolean("autoimg_" + slot, false).apply();
                         runOnUiThread(this::recreate);
                     }).start();
                 }).show();
