@@ -185,7 +185,7 @@ public abstract class PixelActivity extends Activity {
         TextView name = text(label, labelSp, Color.WHITE);
         name.setGravity(Gravity.CENTER);
         name.setSingleLine(true);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(wDp + 24), ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(wDp + 8), ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.topMargin = dp(10);
         box.addView(name, lp);
 
@@ -212,6 +212,23 @@ public abstract class PixelActivity extends Activity {
 
     void toast(String s) {
         Toast.makeText(this, s, Toast.LENGTH_LONG).show();
+    }
+
+    /** Screen width in dp. */
+    float screenWidthDp() {
+        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+        return dm.widthPixels / dm.density;
+    }
+
+    /** Side padding that suits the screen: tighter on narrow TVs. */
+    int sidePadDp() {
+        return screenWidthDp() < 900 ? 36 : 56;
+    }
+
+    /** Width (dp) of each item so {@code perRow} items + gaps fit, leaving room for the frame and focus zoom. */
+    int fitWidth(int perRow, int gapDp, int maxDp) {
+        float avail = screenWidthDp() - 2 * sidePadDp() - (perRow - 1) * gapDp;
+        return Math.max(80, Math.min(maxDp, Math.round(avail / perRow) - 8 - 6));
     }
 
     LinearLayout row() {

@@ -39,6 +39,7 @@ public class NotesActivity extends PixelActivity {
     SharedPreferences prefs;
     LinearLayout grid;
     String focusId;
+    int cardW = 180, cardH = 112;
 
     // ---------- storage (shared with the home screen and screensaver) ----------
     static List<JSONObject> load(Context c) {
@@ -94,7 +95,9 @@ public class NotesActivity extends PixelActivity {
         scroll.setClipChildren(false);
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(56), dp(28), dp(56), dp(40));
+        cardW = fitWidth(PER_ROW, 18, 180);
+        cardH = Math.round(cardW * 0.62f);
+        page.setPadding(dp(sidePadDp()), dp(28), dp(sidePadDp()), dp(40));
         page.setClipChildren(false);
         page.setClipToPadding(false);
         TextView title = text("CATATAN KELUARGA", 18, SkyView.accentNow());
@@ -157,7 +160,7 @@ public class NotesActivity extends PixelActivity {
                 grid.addView(row, lp);
             }
             View c = cards.get(i);
-            row.addView(c, gap(i % PER_ROW == 0 ? 0 : 22));
+            row.addView(c, gap(i % PER_ROW == 0 ? 0 : 18));
             if (focusId != null && focusId.equals(c.getTag())) focus = c;
         }
         (focus != null ? focus : cards.get(0)).requestFocus();
@@ -189,7 +192,7 @@ public class NotesActivity extends PixelActivity {
         LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
         bp.topMargin = dp(8);
         inner.addView(b, bp);
-        frame.addView(inner, new FrameLayout.LayoutParams(dp(180), dp(112)));
+        frame.addView(inner, new FrameLayout.LayoutParams(dp(cardW), dp(cardH)));
 
         frame.setOnClickListener(v -> { play(selectId); focusId = id; click.run(); });
         if (longClick != null) frame.setOnLongClickListener(v -> { focusId = id; longClick.run(); return true; });

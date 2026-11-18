@@ -31,7 +31,8 @@ public class AppsActivity extends PixelActivity {
 
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(56), dp(32), dp(56), dp(48));
+        int pad = sidePadDp(), gapDp = 18, tw = fitWidth(PER_ROW, gapDp, 144), th = Math.round(tw * 9f / 16f);
+        page.setPadding(dp(pad), dp(32), dp(pad), dp(48));
         page.setClipChildren(false);
         page.setClipToPadding(false);
         page.addView(text("SEMUA APLIKASI", 20, YELLOW));
@@ -61,8 +62,8 @@ public class AppsActivity extends PixelActivity {
             String label = r.loadLabel(pm).toString().toUpperCase();
             if (label.length() > 12) label = label.substring(0, 12);
             ComponentName cn = new ComponentName(a.packageName, a.name);
-            LinearLayout t = tile(label, art, 144, 81, 8, () -> open(cn), null);
-            row.addView(t, gap(n % PER_ROW == 0 ? 0 : 24));
+            LinearLayout t = tile(label, art, tw, th, 8, () -> open(cn), null);
+            row.addView(t, gap(n % PER_ROW == 0 ? 0 : gapDp));
             if (first == null) first = t.getChildAt(0);
             n++;
         }

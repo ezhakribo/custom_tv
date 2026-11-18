@@ -85,6 +85,21 @@ public class MainActivity extends PixelActivity {
     String pendingPhotoSlot;
     final List<View> tiles = new ArrayList<>();
     SlideshowView slides;
+    int tileW = 144, tileH = 81, tileGap = 20, sidePad = 56, stripH = 120;
+
+    /** Size everything from the real screen, so 5 tiles always fit across and both rows fit above the slideshow. */
+    void measureScreen() {
+        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+        float wDp = dm.widthPixels / dm.density, hDp = dm.heightPixels / dm.density;
+        sidePad = wDp < 900 ? 36 : 56;
+        tileGap = wDp < 900 ? 14 : 20;
+        stripH = Math.round(Math.min(120, hDp * 0.22f));
+        int byWidth = Math.round((wDp - 2 * sidePad - 4 * tileGap) / 5f) - 8 - 4;       // frame + focus zoom room
+        int byHeight = Math.round((hDp - stripH - 216) / 2f * 16f / 9f);                 // top bar, headers, labels
+        tileW = Math.max(80, Math.min(160, Math.min(byWidth, byHeight)));
+        tileH = Math.round(tileW * 9f / 16f);
+        Log.i(TAG, "screen " + wDp + "x" + hDp + "dp -> tiles " + tileW + "x" + tileH + ", strip " + stripH);
+    }
     static boolean splashShown;
 
     @Override
@@ -92,12 +107,13 @@ public class MainActivity extends PixelActivity {
         super.onCreate(state);
         prefs = getSharedPreferences(KeyService.PREFS, MODE_PRIVATE);
         labelsOnFocusOnly = true;
+        measureScreen();
         FrameLayout root = backdrop();
         root.setClipChildren(false);
 
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(56), dp(20), dp(56), dp(0));
+        page.setPadding(dp(sidePad), dp(20), dp(sidePad), dp(0));
         page.setClipChildren(false);
         page.setClipToPadding(false);
 
@@ -159,7 +175,7 @@ public class MainActivity extends PixelActivity {
             slides = new SlideshowView(this);
             slides.showWalker = walkerOn;
             sky.showWalker = false;
-            root.addView(slides, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(120), Gravity.BOTTOM));
+            root.addView(slides, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(stripH), Gravity.BOTTOM));
         }
         if (!splashShown) {                       // opening animation, once per TV start
             splashShown = true;
@@ -182,12 +198,12 @@ public class MainActivity extends PixelActivity {
         List<Slot> ordered = order(key, slots);
         for (int i = 0; i < ordered.size(); i++) {
             Slot s = ordered.get(i);
-            LinearLayout t = tile(label(s), art(s), 144, 81, 10, () -> open(s), () -> slotMenu(key, slots, s));
+            LinearLayout t = tile(label(s), art(s), tileW, tileH, tileW < 140 ? 8 : 10, () -> open(s), () -> slotMenu(key, slots, s));
             View frame = t.getChildAt(0);
             frame.setTag(s.id);
             tiles.add(frame);
             if (firstTile == null) firstTile = frame;
-            r.addView(t, gap(i == 0 ? 0 : 20));
+            r.addView(t, gap(i == 0 ? 0 : tileGap));
         }
         return r;
     }
