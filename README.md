@@ -1,4 +1,4 @@
-# Pixel Home 2.7 – home screen pixel-art untuk Android TV
+# Pixel Home 2.9 – home screen pixel-art untuk Android TV
 
 ## Build
 Upload semua isi folder ini ke GitHub, tunggu centang hijau di Actions,
@@ -36,6 +36,18 @@ Tombol CATATAN di layar utama, atau "Catatan Keluarga" di daftar aplikasi.
 OK = buka/ubah, tahan OK = ganti warna, sematkan di layar utama & screensaver, hapus.
 Tambah dari komputer (perhatikan tanda kutip ganda + tunggal):
     platform-tools\adb shell am start -n com.ibo.pixelhome/.NotesActivity --es title "'Belanja'" --es add "'Beli susu dan roti'"
+
+## Tile GAME dan + TAMBAH (2.8)
+Tile kosong: tekan OK lalu pilih aplikasinya (aplikasi TV maupun aplikasi HP yang di-sideload).
+Ganti kapan saja: tahan OK > Ganti aplikasi. Kosongkan lagi: tahan OK > Kembalikan seperti semula.
+
+## Jalan setapak & perayaan (2.9)
+- Setiap gambar slideshow punya jalan setapak sendiri (dermaga, pasir, jalan tanah, jalur logam, dll.),
+  dan kota di screensaver punya trotoar, jadi keluarga berjalan di atasnya.
+- Setiap 5 putaran (bolak-balik = 1 putaran) keluarga membentangkan spanduk "WELCOME TO OUR FAMILY"
+  dengan konfeti; kucing terkejut lalu menari.
+- Coba sekarang: tahan OK pada SETELAN > "Rayakan sekarang!", atau
+      platform-tools\adb shell am start -n com.ibo.pixelhome/.MainActivity --ez celebrate true
 
 ## Perintah (dari folder Desktop)
 Nama di sapaan:
